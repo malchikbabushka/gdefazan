@@ -17,9 +17,15 @@ export function parseOptionalInt(input: string): number | undefined {
 }
 
 export function productMatchesFilters(p: Product, f: CatalogFilters) {
+  // Defensive: filters can be partially constructed from UI / URL / storage.
+  // Treat missing Sets as "no filter".
+  const deviceTypes = f.deviceTypes ?? new Set();
+  const matrices = f.matrices ?? new Set();
+  const lenses = f.lenses ?? new Set();
+
   if (f.inStockOnly && !p.inStock) return false;
   if (f.rangefinderOnly && !p.hasRangefinder) return false;
-  if (f.deviceTypes.size > 0 && !f.deviceTypes.has(p.type)) return false;
+  if (deviceTypes.size > 0 && !deviceTypes.has(p.type)) return false;
 
   if (f.query.trim()) {
     const q = f.query.trim().toLowerCase();
@@ -30,8 +36,8 @@ export function productMatchesFilters(p: Product, f: CatalogFilters) {
   if (typeof f.priceMin === "number" && p.priceRub < f.priceMin) return false;
   if (typeof f.priceMax === "number" && p.priceRub > f.priceMax) return false;
 
-  if (f.matrices.size > 0 && !f.matrices.has(p.matrix)) return false;
-  if (f.lenses.size > 0 && !f.lenses.has(p.lensMm)) return false;
+  if (matrices.size > 0 && !matrices.has(p.matrix)) return false;
+  if (lenses.size > 0 && !lenses.has(p.lensMm)) return false;
 
   if (f.magnificationBand !== "any") {
     const min = p.magnificationMin;
