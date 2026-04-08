@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { CatalogFilters, Matrix, ProductType, SortKey } from "@/lib/catalog-types";
-import { useProducts } from "@/lib/products-store";
+import { useAppProducts } from "@/components/providers/AppProviders";
 import {
   parseOptionalInt,
   productMatchesFilters,
@@ -29,7 +29,7 @@ const DEFAULT_FILTERS: CatalogFilters = {
 };
 
 export function HomePage() {
-  const { products } = useProducts();
+  const { products } = useAppProducts();
   const searchParams = useSearchParams();
   const [sort, setSort] = useState<SortKey>("popular");
   const [filters, setFilters] = useState<CatalogFilters>(DEFAULT_FILTERS);

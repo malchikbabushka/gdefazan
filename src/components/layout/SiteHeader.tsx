@@ -52,7 +52,7 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { CartSheet } from "@/components/cart/CartSheet";
-import { useProducts } from "@/lib/products-store";
+import { useAppProducts } from "@/components/providers/AppProviders";
 import { topMatches } from "@/lib/search";
 import { getProductUrl } from "@/lib/product-utils";
 
@@ -223,7 +223,7 @@ export function SiteHeader() {
   const [searchValue, setSearchValue] = useState("");
   const [desktopSuggestOpen, setDesktopSuggestOpen] = useState(false);
   const blurCloseTimer = useRef<number | null>(null);
-  const { products, adminProducts } = useProducts();
+  const { products, adminProducts } = useAppProducts();
 
   const suggestions = useMemo(() => {
     const q = searchValue.trim();

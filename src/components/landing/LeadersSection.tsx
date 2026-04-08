@@ -2,10 +2,10 @@
 
 import { useMemo } from "react";
 import { ProductCard } from "@/components/home/ProductCard";
-import { useProducts } from "@/lib/products-store";
+import { useAppProducts } from "@/components/providers/AppProviders";
 
 export function LeadersSection() {
-  const { products } = useProducts();
+  const { products } = useAppProducts();
 
   const leaders = useMemo(() => {
     const items = [...products];

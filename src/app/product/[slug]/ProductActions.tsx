@@ -3,12 +3,10 @@
 import { useState } from "react";
 import { ShoppingCart, Minus, Plus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useProducts } from "@/lib/products-store";
-import { useCart } from "@/lib/cart-store";
+import { useAppCart } from "@/components/providers/AppProviders";
 
 export function ProductActions({ productId }: { productId: string }) {
-  const { products } = useProducts();
-  const cart = useCart(products);
+  const cart = useAppCart();
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
 

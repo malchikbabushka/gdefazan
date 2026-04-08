@@ -7,14 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { formatRub } from "@/lib/catalog-logic";
-import { useProducts } from "@/lib/products-store";
-import { useCart } from "@/lib/cart-store";
+import { useAppCart } from "@/components/providers/AppProviders";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function CartSheet() {
-  const { products } = useProducts();
-  const cart = useCart(products);
+  const cart = useAppCart();
 
   return (
     <Sheet>

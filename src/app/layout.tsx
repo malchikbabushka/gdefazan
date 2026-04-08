@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { OrganizationJsonLd, WebSiteJsonLd } from "@/components/seo/JsonLd";
 import { getSiteUrl } from "@/lib/seo";
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import { AppProviders } from "@/components/providers/AppProviders";
 
 const manrope = Manrope({
   variable: "--font-sans",
@@ -65,11 +66,13 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <TooltipProvider>
-          <SiteHeader />
-          {children}
-          <SiteFooter />
-          <OrganizationJsonLd />
-          <WebSiteJsonLd />
+          <AppProviders>
+            <SiteHeader />
+            {children}
+            <SiteFooter />
+            <OrganizationJsonLd />
+            <WebSiteJsonLd />
+          </AppProviders>
         </TooltipProvider>
       </body>
     </html>

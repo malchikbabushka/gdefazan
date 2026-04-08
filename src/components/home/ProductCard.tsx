@@ -7,16 +7,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useProducts } from "@/lib/products-store";
-import { useCart } from "@/lib/cart-store";
+import { useAppCart, useAppProducts } from "@/components/providers/AppProviders";
 
 type Props = {
   product: Product;
 };
 
 export function ProductCard({ product }: Props) {
-  const { products, adminProducts } = useProducts();
-  const cart = useCart(products);
+  const { adminProducts } = useAppProducts();
+  const cart = useAppCart();
 
   const images = useMemo(() => {
     const out: string[] = [];
