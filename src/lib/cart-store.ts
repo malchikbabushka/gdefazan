@@ -15,6 +15,14 @@ export type CartState = {
 const STORAGE_KEY = "thermal-shop:cart:v1";
 const CART_EVENT = "thermal-shop:cart:changed";
 
+function notifyCartChanged() {
+  if (typeof window === "undefined") return;
+  // Dispatch asynchronously to avoid nested state updates during React render/update.
+  queueMicrotask(() => {
+    window.dispatchEvent(new Event(CART_EVENT));
+  });
+}
+
 function loadCart(): CartState {
   if (typeof window === "undefined") return { items: [] };
   try {
@@ -89,7 +97,7 @@ export function useCart(products: Product[]) {
       else items.push({ productId, qty });
       const next = { items };
       saveCart(next);
-      window.dispatchEvent(new Event(CART_EVENT));
+      notifyCartChanged();
       return next;
     });
   }
@@ -102,7 +110,7 @@ export function useCart(products: Product[]) {
         .filter((x) => x.qty > 0);
       const next = { items };
       saveCart(next);
-      window.dispatchEvent(new Event(CART_EVENT));
+      notifyCartChanged();
       return next;
     });
   }
@@ -112,7 +120,7 @@ export function useCart(products: Product[]) {
     setState((s) => {
       const next = { items: s.items.filter((x) => x.productId !== productId) };
       saveCart(next);
-      window.dispatchEvent(new Event(CART_EVENT));
+      notifyCartChanged();
       return next;
     });
   }
@@ -122,7 +130,7 @@ export function useCart(products: Product[]) {
     const next = { items: [] };
     setState(next);
     saveCart(next);
-    window.dispatchEvent(new Event(CART_EVENT));
+    notifyCartChanged();
   }
 
   return { hydrated, state, itemsDetailed, count, totalRub, add, setQty, remove, clear };
