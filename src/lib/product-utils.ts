@@ -13,6 +13,21 @@ export function findProductBySlug(slug: string): Product | undefined {
   return PRODUCTS.find((p) => slugify(p.name) === slug);
 }
 
+/** Одна строка для списков/поиска: не дублируем бренд, если название уже с него начинается. */
+export function productDisplayTitle(product: Product): string {
+  const b = product.brand.trim();
+  const n = product.name.trim();
+  if (!b) return n;
+  if (!n) return b;
+  const bn = b.toLowerCase();
+  const nn = n.toLowerCase();
+  if (nn === bn) return n;
+  if (nn.startsWith(`${bn} `) || nn.startsWith(`${bn}-`) || nn.startsWith(`${bn}—`)) {
+    return n;
+  }
+  return `${b} ${n}`;
+}
+
 const compactName = (s: string) => s.toLowerCase().replace(/\s+/g, "");
 
 /**

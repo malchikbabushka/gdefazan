@@ -57,6 +57,7 @@ import { topMatches } from "@/lib/search";
 import {
   adminProductMatchesCatalogProduct,
   getProductUrl,
+  productDisplayTitle,
   slugify,
 } from "@/lib/product-utils";
 
@@ -481,7 +482,16 @@ export function SiteHeader() {
                                 <div className="relative h-10 w-14 overflow-hidden rounded-xl border border-white/10 bg-white/5">
                                   {(() => {
                                     const src = adminThumbByCatalogId.get(p.id);
-                                    if (!src) return null;
+                                    if (!src) {
+                                      return (
+                                        <div className="flex h-full w-full items-center justify-center">
+                                          <Crosshair
+                                            className="h-4 w-4 text-zinc-600"
+                                            aria-hidden
+                                          />
+                                        </div>
+                                      );
+                                    }
                                     if (
                                       src.startsWith("data:") ||
                                       src.startsWith("/api/")
@@ -509,7 +519,7 @@ export function SiteHeader() {
 
                                 <div className="min-w-0">
                                   <div className="truncate font-semibold">
-                                    {p.brand} {p.name}
+                                    {productDisplayTitle(p)}
                                   </div>
                                   <div className="truncate text-xs text-zinc-300/70">
                                     {p.type === "scope" ? "Теплоприцел" : "Тепломонокуляр"} •{" "}
@@ -565,11 +575,8 @@ export function SiteHeader() {
                             key={p.id}
                             onSelect={() => router.push(getProductUrl(p))}
                           >
-                            <span className="font-semibold text-zinc-50">
-                              {p.brand}
-                            </span>
-                            <span className="ml-2 text-zinc-200/80">
-                              {p.name}
+                            <span className="text-zinc-50">
+                              {productDisplayTitle(p)}
                             </span>
                           </CommandItem>
                         ))}
