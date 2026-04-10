@@ -45,6 +45,7 @@ type Props = {
 };
 
 export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export async function generateStaticParams() {
   return PRODUCTS.map((p) => ({ slug: slugify(p.name) }));
@@ -113,11 +114,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const publicPhoto = admin?.photoDataUrls?.find(
     (u) => u.startsWith("/") || u.startsWith("http://") || u.startsWith("https://"),
   );
+  const hasAnyAdminPhoto =
+    Array.isArray(admin?.photoDataUrls) &&
+    admin.photoDataUrls.some((u) => typeof u === "string" && u.length > 0);
   const ogImageUrl = publicPhoto
     ? publicPhoto.startsWith("http")
       ? publicPhoto
       : absoluteUrl(publicPhoto)
-    : absoluteUrl("/logo.png");
+    : hasAnyAdminPhoto && admin
+      ? absoluteUrl(`/api/admin/products/${admin.id}/photo?index=0`)
+      : absoluteUrl("/logo.png");
 
   return {
     title,
@@ -146,7 +152,17 @@ export default async function ProductPage({ params }: Props) {
   const product = resolved.product;
 
   const admin = await findAdminOverlayForCatalogProduct(product);
-  const galleryImages = admin?.photoDataUrls?.filter(Boolean) ?? [];
+  const adminPhotoUrls =
+    admin?.photoDataUrls?.filter((u) => typeof u === "string" && u.length > 0) ?? [];
+  // Avoid embedding base64 in HTML; public URLs can be rendered directly.
+  const galleryImages = adminPhotoUrls
+    .filter(
+      (u) =>
+        !u.startsWith("data:") &&
+        (u.startsWith("/") || u.startsWith("http://") || u.startsWith("https://")),
+    )
+    .slice(0, 12);
+  const useRemoteGallery = adminPhotoUrls.length > 0 && galleryImages.length === 0;
 
   const crumbs = productBreadcrumbs(product);
   const typeLabel =
@@ -179,9 +195,12 @@ export default async function ProductPage({ params }: Props) {
   const hasAdminSpecs = adminSpecItems.some((x) => x.kind === "row");
   const specs = defaultSpecs;
 
-  const jsonLdImages = galleryImages.filter(
+  let jsonLdImages = galleryImages.filter(
     (u) => u.startsWith("/") || u.startsWith("http://") || u.startsWith("https://"),
   );
+  if (jsonLdImages.length === 0 && admin && adminPhotoUrls.length > 0) {
+    jsonLdImages = [absoluteUrl(`/api/admin/products/${admin.id}/photo?index=0`)];
+  }
 
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
@@ -208,7 +227,14 @@ export default async function ProductPage({ params }: Props) {
       <div className="grid gap-8 lg:grid-cols-2">
         {/* Media + short specs + tabs (as requested: under photo and short specs) */}
         <div>
-          <ProductGallery images={galleryImages} productName={product.name} />
+          <ProductGallery
+            images={galleryImages}
+            productName={product.name}
+            remoteAdminId={useRemoteGallery ? admin!.id : null}
+            remotePhotoCount={
+              useRemoteGallery ? Math.min(adminPhotoUrls.length, 12) : 0
+            }
+          />
 
           {/* Description / Specs tabs */}
           <Tabs defaultValue="description" className="mt-4 w-full">

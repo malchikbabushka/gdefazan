@@ -18,20 +18,30 @@ export function ProductCard({ product }: Props) {
   const cart = useAppCart();
 
   const images = useMemo(() => {
-    const out: string[] = [];
     for (const a of adminProducts) {
-      const list = Array.isArray(a.photoDataUrls) ? a.photoDataUrls : [];
-      if (list.length === 0) continue;
-      if (a.linkedCatalogProductId && a.linkedCatalogProductId === product.id) {
-        out.push(...list);
-        break;
+      const linked =
+        a.linkedCatalogProductId && a.linkedCatalogProductId === product.id;
+      const synthetic = `a_${a.id}` === product.id;
+      if (!linked && !synthetic) continue;
+
+      const publicList = Array.isArray(a.photoDataUrls)
+        ? a.photoDataUrls.filter((u) => typeof u === "string" && u.length > 0)
+        : [];
+      const count =
+        typeof a.photoCount === "number" && Number.isFinite(a.photoCount)
+          ? a.photoCount
+          : publicList.length;
+
+      if (count > 0) {
+        const cap = Math.min(count, 8);
+        return Array.from(
+          { length: cap },
+          (_, i) => `/api/admin/products/${a.id}/photo?index=${i}`,
+        );
       }
-      if (`a_${a.id}` === product.id) {
-        out.push(...list);
-        break;
-      }
+      return publicList;
     }
-    return out.filter(Boolean);
+    return [];
   }, [adminProducts, product.id]);
 
   const [activeImg, setActiveImg] = useState(0);
@@ -90,7 +100,7 @@ export function ProductCard({ product }: Props) {
               >
                 {images.map((src, idx) => (
                   <div key={`${product.id}-${idx}`} className="relative h-full w-full flex-none">
-                    {src.startsWith("data:") ? (
+                    {src.startsWith("data:") || src.startsWith("/api/") ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={src} alt="" className="h-full w-full object-cover" />
                     ) : (

@@ -10,9 +10,45 @@ function generateId() {
   return `p_${Math.random().toString(16).slice(2)}_${Date.now().toString(16)}`;
 }
 
-export async function GET() {
+function isPublicPhotoUrl(u: string) {
+  return u.startsWith("/") || u.startsWith("http://") || u.startsWith("https://");
+}
+
+export async function GET(req: Request) {
   const db = await readAdminDb();
-  return NextResponse.json({ products: db.products });
+  const url = new URL(req.url);
+  const includePhotos =
+    url.searchParams.get("includePhotos") === "1" ||
+    url.searchParams.get("includePhotos") === "true";
+
+  if (includePhotos) {
+    const products: AdminProduct[] = db.products.map((p) => {
+      const raw =
+        Array.isArray(p.photoDataUrls) && p.photoDataUrls.length
+          ? p.photoDataUrls.filter((u) => typeof u === "string" && u)
+          : [];
+      return {
+        ...p,
+        photoCount: raw.length,
+      };
+    });
+    return NextResponse.json({ products });
+  }
+
+  const products: AdminProduct[] = db.products.map((p) => {
+    const raw =
+      Array.isArray(p.photoDataUrls) && p.photoDataUrls.length
+        ? p.photoDataUrls.filter((u) => typeof u === "string" && u)
+        : [];
+    return {
+      ...p,
+      // Avoid sending base64 data URLs to the storefront. Keep only public URLs.
+      photoDataUrls: raw.filter(isPublicPhotoUrl),
+      photoCount: raw.length,
+    };
+  });
+
+  return NextResponse.json({ products });
 }
 
 export async function POST(req: Request) {

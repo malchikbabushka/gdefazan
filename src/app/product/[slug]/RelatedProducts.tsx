@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useProducts } from "@/lib/products-store";
+import { useAppProducts } from "@/components/providers/AppProviders";
 import { ProductCard } from "@/components/home/ProductCard";
 import type { Product } from "@/lib/catalog-types";
 
@@ -12,7 +12,7 @@ export function RelatedProducts({
   currentId: string;
   type: Product["type"];
 }) {
-  const { products } = useProducts();
+  const { products } = useAppProducts();
 
   const related = useMemo(() => {
     const sameType = products.filter(

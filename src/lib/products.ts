@@ -127,5 +127,19 @@ export const PRODUCTS: Product[] = [
     inStock: true,
     popularity: 69,
   },
+  {
+    id: "p10",
+    name: "MM06-50 LRF",
+    brand: "Sytong",
+    type: "scope",
+    priceRub: 179000,
+    matrix: "640×512",
+    lensMm: 50,
+    magnificationMin: 2.0,
+    magnificationMax: 8.0,
+    hasRangefinder: true,
+    inStock: true,
+    popularity: 96,
+  },
 ];
 

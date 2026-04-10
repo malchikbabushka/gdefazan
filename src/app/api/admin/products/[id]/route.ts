@@ -6,14 +6,34 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+function isPublicPhotoUrl(u: string) {
+  return u.startsWith("/") || u.startsWith("http://") || u.startsWith("https://");
+}
+
 type Ctx = { params: Promise<{ id: string }> };
 
-export async function GET(_req: Request, ctx: Ctx) {
+export async function GET(req: Request, ctx: Ctx) {
   const { id } = await ctx.params;
   const db = await readAdminDb();
   const product = db.products.find((p) => p.id === id);
   if (!product) return NextResponse.json({ error: "not found" }, { status: 404 });
-  return NextResponse.json({ product });
+
+  const url = new URL(req.url);
+  const includePhotos =
+    url.searchParams.get("includePhotos") === "1" ||
+    url.searchParams.get("includePhotos") === "true";
+  if (includePhotos) return NextResponse.json({ product });
+
+  return NextResponse.json({
+    product: {
+      ...product,
+      photoDataUrls: Array.isArray(product.photoDataUrls)
+        ? product.photoDataUrls.filter(
+            (u) => typeof u === "string" && isPublicPhotoUrl(u),
+          )
+        : [],
+    } satisfies AdminProduct,
+  });
 }
 
 export async function PUT(req: Request, ctx: Ctx) {

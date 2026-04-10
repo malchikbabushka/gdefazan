@@ -1,5 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { cache } from "react";
 import type { AdminOrder, AdminProduct } from "@/lib/admin-types";
 
 type AdminDb = {
@@ -56,6 +57,8 @@ export async function readAdminDb(): Promise<AdminDb> {
     orders: Array.isArray(parsed.orders) ? parsed.orders : [],
   };
 }
+
+export const readAdminDbCached = cache(readAdminDb);
 
 export async function writeAdminDb(next: AdminDb) {
   await ensureDbFile();

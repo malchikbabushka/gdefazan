@@ -19,6 +19,8 @@ export type AdminProduct = {
   description: string;
   specsText: string;
   photoDataUrls: string[];
+  /** Total photos (including data: URLs stripped from light API responses). */
+  photoCount?: number;
   createdAt: string;
   updatedAt: string;
 };

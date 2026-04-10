@@ -90,7 +90,7 @@ export default function AdminProductsCrudPage() {
     setLoading(true);
     setStatus({ kind: "idle" });
     try {
-      const r = await fetch("/api/admin/products", { cache: "no-store" });
+      const r = await fetch("/api/admin/products?includePhotos=1", { cache: "no-store" });
       const data = (await r.json()) as { products: AdminProduct[] };
       setItems(Array.isArray(data.products) ? data.products : []);
     } catch (e) {

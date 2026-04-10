@@ -7,14 +7,38 @@ import { cn } from "@/lib/utils";
 type Props = {
   images: string[];
   productName: string;
+  /** When set, load photos via API (keeps HTML small; supports base64 stored server-side). */
+  remoteAdminId?: string | null;
+  remotePhotoCount?: number;
 };
 
 function isDataUrl(src: string) {
   return src.startsWith("data:");
 }
 
-export function ProductGallery({ images, productName }: Props) {
-  const list = useMemo(() => images.filter(Boolean), [images]);
+function useNativeImg(src: string) {
+  return isDataUrl(src) || src.startsWith("/api/");
+}
+
+export function ProductGallery({
+  images,
+  productName,
+  remoteAdminId,
+  remotePhotoCount,
+}: Props) {
+  const list = useMemo(() => {
+    const n =
+      typeof remotePhotoCount === "number" && remotePhotoCount > 0
+        ? remotePhotoCount
+        : 0;
+    if (remoteAdminId && n > 0) {
+      return Array.from(
+        { length: Math.min(n, 12) },
+        (_, i) => `/api/admin/products/${remoteAdminId}/photo?index=${i}`,
+      );
+    }
+    return images.filter(Boolean);
+  }, [images, remoteAdminId, remotePhotoCount]);
   const [active, setActive] = useState(0);
 
   const safeIndex = list.length ? Math.min(active, list.length - 1) : 0;
@@ -29,7 +53,7 @@ export function ProductGallery({ images, productName }: Props) {
   return (
     <div className="space-y-3">
       <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-white/10 bg-black/40">
-        {isDataUrl(current) ? (
+        {useNativeImg(current) ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={current}
@@ -63,7 +87,7 @@ export function ProductGallery({ images, productName }: Props) {
               )}
               aria-label={`Фото ${i + 1}`}
             >
-              {isDataUrl(src) ? (
+              {useNativeImg(src) ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={src} alt="" className="h-full w-full object-cover" />
               ) : (

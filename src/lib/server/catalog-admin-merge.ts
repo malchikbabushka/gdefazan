@@ -1,7 +1,7 @@
 import type { Product } from "@/lib/catalog-types";
 import type { AdminProduct } from "@/lib/admin-types";
 import { slugify } from "@/lib/product-utils";
-import { readAdminDb } from "@/lib/server/admin-db";
+import { readAdminDbCached } from "@/lib/server/admin-db";
 
 /**
  * Находит запись админки для карточки витрины:
@@ -11,7 +11,7 @@ import { readAdminDb } from "@/lib/server/admin-db";
 export async function findAdminOverlayForCatalogProduct(
   product: Product,
 ): Promise<AdminProduct | undefined> {
-  const db = await readAdminDb();
+  const db = await readAdminDbCached();
   const byId = db.products.find(
     (a) =>
       typeof a.linkedCatalogProductId === "string" &&
