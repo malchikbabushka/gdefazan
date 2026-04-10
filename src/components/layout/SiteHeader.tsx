@@ -54,7 +54,11 @@ import { buttonVariants } from "@/components/ui/button";
 import { CartSheet } from "@/components/cart/CartSheet";
 import { useAppProducts } from "@/components/providers/AppProviders";
 import { topMatches } from "@/lib/search";
-import { getProductUrl } from "@/lib/product-utils";
+import {
+  adminProductMatchesCatalogProduct,
+  getProductUrl,
+  slugify,
+} from "@/lib/product-utils";
 
 function MenuLink({
   href,
@@ -228,25 +232,58 @@ export function SiteHeader() {
   const suggestions = useMemo(() => {
     const q = searchValue.trim();
     if (!q) return [];
-    return topMatches(
+    const hits = topMatches(
       products,
       q,
       (p) => `${p.brand} ${p.name}`,
-      8,
-    ).map((h) => h.item);
+      24,
+    );
+    const byKey = new Map<string, (typeof products)[number]>();
+    for (const h of hits) {
+      const p = h.item;
+      const key = slugify(`${p.brand} ${p.name}`);
+      const prev = byKey.get(key);
+      if (!prev) {
+        byKey.set(key, p);
+        continue;
+      }
+      if (prev.id.startsWith("a_") && !p.id.startsWith("a_")) {
+        byKey.set(key, p);
+      }
+    }
+    return Array.from(byKey.values()).slice(0, 8);
   }, [products, searchValue]);
 
   const adminThumbByCatalogId = useMemo(() => {
     const map = new Map<string, string>();
     for (const a of adminProducts) {
-      const thumb = a.photoDataUrls?.[0];
+      const publicUrls = Array.isArray(a.photoDataUrls)
+        ? a.photoDataUrls.filter((u) => typeof u === "string" && u.length > 0)
+        : [];
+      const publicThumb = publicUrls.find(
+        (u) => !u.startsWith("data:"),
+      );
+      const count =
+        typeof a.photoCount === "number" && Number.isFinite(a.photoCount)
+          ? a.photoCount
+          : publicUrls.length;
+      const thumb =
+        publicThumb ??
+        (count > 0 ? `/api/admin/products/${a.id}/photo?index=0` : null);
       if (!thumb) continue;
-      if (a.linkedCatalogProductId) map.set(a.linkedCatalogProductId, thumb);
-      // also allow matching by a_ prefix id if it was added from admin
+
       map.set(`a_${a.id}`, thumb);
+      if (a.linkedCatalogProductId) {
+        map.set(a.linkedCatalogProductId.trim(), thumb);
+      }
+      for (const p of products) {
+        if (adminProductMatchesCatalogProduct(a, p)) {
+          map.set(p.id, thumb);
+        }
+      }
     }
     return map;
-  }, [adminProducts]);
+  }, [adminProducts, products]);
 
   useEffect(() => {
     const fromStorage = loadSiteConfigFromStorage();
@@ -442,24 +479,32 @@ export function SiteHeader() {
                             >
                               <div className="flex min-w-0 items-center gap-3">
                                 <div className="relative h-10 w-14 overflow-hidden rounded-xl border border-white/10 bg-white/5">
-                                  {adminThumbByCatalogId.get(p.id) ? (
-                                    adminThumbByCatalogId.get(p.id)!.startsWith("data:") ? (
-                                      // eslint-disable-next-line @next/next/no-img-element
-                                      <img
-                                        src={adminThumbByCatalogId.get(p.id)!}
-                                        alt=""
-                                        className="h-full w-full object-cover"
-                                      />
-                                    ) : (
+                                  {(() => {
+                                    const src = adminThumbByCatalogId.get(p.id);
+                                    if (!src) return null;
+                                    if (
+                                      src.startsWith("data:") ||
+                                      src.startsWith("/api/")
+                                    ) {
+                                      return (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img
+                                          src={src}
+                                          alt=""
+                                          className="h-full w-full object-cover"
+                                        />
+                                      );
+                                    }
+                                    return (
                                       <Image
-                                        src={adminThumbByCatalogId.get(p.id)!}
+                                        src={src}
                                         alt=""
                                         fill
                                         className="object-cover"
                                         sizes="56px"
                                       />
-                                    )
-                                  ) : null}
+                                    );
+                                  })()}
                                 </div>
 
                                 <div className="min-w-0">
