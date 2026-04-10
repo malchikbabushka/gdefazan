@@ -30,7 +30,8 @@ export function ProductCard({ product }: Props) {
           : publicList.length;
 
       if (count > 0) {
-        const cap = Math.min(count, 8);
+        // Fewer parallel /photo requests on first paint (hover still shows first images).
+        const cap = Math.min(count, 4);
         return Array.from(
           { length: cap },
           (_, i) => `/api/admin/products/${a.id}/photo?index=${i}`,

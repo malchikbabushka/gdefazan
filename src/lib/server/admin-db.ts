@@ -24,7 +24,7 @@ async function ensureDbFile() {
   }
 }
 
-export async function readAdminDb(): Promise<AdminDb> {
+async function loadAdminDbFromDisk(): Promise<AdminDb> {
   await ensureDbFile();
   const raw = await fs.readFile(getDbPath(), "utf8");
   const parsed = JSON.parse(raw) as AdminDb;
@@ -58,10 +58,46 @@ export async function readAdminDb(): Promise<AdminDb> {
   };
 }
 
+/**
+ * In-process cache + single-flight: many parallel /photo requests share one disk read + JSON parse.
+ * Bumped on write so admin changes are visible immediately after save.
+ */
+let dbVersion = 0;
+let pendingRead: Promise<AdminDb> | null = null;
+let snapshot: { version: number; data: AdminDb } | null = null;
+
+export async function readAdminDb(): Promise<AdminDb> {
+  if (snapshot && snapshot.version === dbVersion) {
+    return snapshot.data;
+  }
+
+  if (!pendingRead) {
+    const captureVersion = dbVersion;
+    pendingRead = loadAdminDbFromDisk()
+      .then((data) => {
+        if (captureVersion === dbVersion) {
+          snapshot = { version: dbVersion, data };
+        }
+        return data;
+      })
+      .finally(() => {
+        pendingRead = null;
+      });
+  }
+
+  await pendingRead;
+  if (snapshot && snapshot.version === dbVersion) {
+    return snapshot.data;
+  }
+  return readAdminDb();
+}
+
 export const readAdminDbCached = cache(readAdminDb);
 
 export async function writeAdminDb(next: AdminDb) {
+  dbVersion += 1;
+  snapshot = null;
+  pendingRead = null;
   await ensureDbFile();
   await fs.writeFile(getDbPath(), JSON.stringify(next, null, 2), "utf8");
 }
-
