@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type { Product } from "@/lib/catalog-types";
 import { PRODUCTS } from "@/lib/products";
 import type { AdminProduct } from "@/lib/admin-types";
-import { slugify } from "@/lib/product-utils";
+import { adminProductMatchesCatalogProduct } from "@/lib/product-utils";
 
 const STORAGE_KEY = "thermal-shop:products:v1";
 
@@ -69,7 +69,7 @@ export function useProducts() {
               continue;
             }
 
-            const match = prev.find((p) => slugify(p.name) === slugify(a.name));
+            const match = prev.find((p) => adminProductMatchesCatalogProduct(a, p));
             if (match) {
               const base = byId.get(match.id)!;
               byId.set(match.id, {

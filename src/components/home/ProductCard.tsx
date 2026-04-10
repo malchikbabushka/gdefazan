@@ -1,6 +1,6 @@
 import type { Product } from "@/lib/catalog-types";
 import { formatRub } from "@/lib/catalog-logic";
-import { getProductUrl } from "@/lib/product-utils";
+import { adminProductMatchesCatalogProduct, getProductUrl } from "@/lib/product-utils";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -19,10 +19,7 @@ export function ProductCard({ product }: Props) {
 
   const images = useMemo(() => {
     for (const a of adminProducts) {
-      const linked =
-        a.linkedCatalogProductId && a.linkedCatalogProductId === product.id;
-      const synthetic = `a_${a.id}` === product.id;
-      if (!linked && !synthetic) continue;
+      if (!adminProductMatchesCatalogProduct(a, product)) continue;
 
       const publicList = Array.isArray(a.photoDataUrls)
         ? a.photoDataUrls.filter((u) => typeof u === "string" && u.length > 0)
@@ -42,7 +39,7 @@ export function ProductCard({ product }: Props) {
       return publicList;
     }
     return [];
-  }, [adminProducts, product.id]);
+  }, [adminProducts, product]);
 
   const [activeImg, setActiveImg] = useState(0);
   const hoverTimer = useRef<number | null>(null);

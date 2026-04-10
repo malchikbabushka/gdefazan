@@ -1,6 +1,6 @@
 import type { Product } from "@/lib/catalog-types";
 import type { AdminProduct } from "@/lib/admin-types";
-import { slugify } from "@/lib/product-utils";
+import { adminProductMatchesCatalogProduct, slugify } from "@/lib/product-utils";
 import { readAdminDbCached } from "@/lib/server/admin-db";
 
 /**
@@ -20,5 +20,8 @@ export async function findAdminOverlayForCatalogProduct(
   if (byId) return byId;
 
   const slug = slugify(product.name);
-  return db.products.find((a) => slugify(a.name) === slug);
+  const byNameSlug = db.products.find((a) => slugify(a.name) === slug);
+  if (byNameSlug) return byNameSlug;
+
+  return db.products.find((a) => adminProductMatchesCatalogProduct(a, product));
 }
