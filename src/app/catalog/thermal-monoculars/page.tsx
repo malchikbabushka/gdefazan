@@ -7,12 +7,13 @@ function hasSearchParams(searchParams: Record<string, string | string[] | undefi
   );
 }
 
-export function generateMetadata({
+export async function generateMetadata({
   searchParams,
 }: {
-  searchParams: Record<string, string | string[] | undefined>;
-}): Metadata {
-  const indexable = !hasSearchParams(searchParams);
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const resolved = await searchParams;
+  const indexable = !hasSearchParams(resolved);
 
   return {
     title: "Тепловизионные монокуляры",
