@@ -10,7 +10,9 @@ export function clampNumber(n: number, min: number, max: number) {
 }
 
 export function parseOptionalInt(input: string): number | undefined {
-  const normalized = input.replace(/\s+/g, "").replace(/[^\d]/g, "");
+  const normalized = input
+    .replace(/[\s\u00a0\u202f\u2007\u2060]+/g, "")
+    .replace(/[^\d]/g, "");
   if (!normalized) return undefined;
   const v = Number.parseInt(normalized, 10);
   return Number.isFinite(v) ? v : undefined;

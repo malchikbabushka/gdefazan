@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import { Manrope, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { SiteHeader } from "@/components/layout/SiteHeader";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { OrganizationJsonLd, WebSiteJsonLd } from "@/components/seo/JsonLd";
 import { getSiteUrl } from "@/lib/seo";
-import { SiteFooter } from "@/components/layout/SiteFooter";
 import { AppProviders } from "@/components/providers/AppProviders";
+import { StorefrontShell } from "@/components/layout/StorefrontShell";
 
 const manrope = Manrope({
   variable: "--font-sans",
@@ -67,9 +66,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <TooltipProvider>
           <AppProviders>
-            <SiteHeader />
-            {children}
-            <SiteFooter />
+            <StorefrontShell>{children}</StorefrontShell>
             <OrganizationJsonLd />
             <WebSiteJsonLd />
           </AppProviders>

@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { cache } from "react";
 import type { AdminOrder, AdminProduct } from "@/lib/admin-types";
+import { AdminDemoFsReadOnlyError, isFsReadOnlyErrno } from "@/lib/server/admin-write-errors";
 
 type AdminDb = {
   products: AdminProduct[];
@@ -39,8 +40,18 @@ async function loadAdminDbFromDisk(): Promise<AdminDb> {
         ? [legacySingle]
         : [];
 
+    const stockQtyRaw = anyP.stockQty;
+    const stockQty =
+      typeof stockQtyRaw === "number" && Number.isFinite(stockQtyRaw)
+        ? Math.max(0, Math.floor(stockQtyRaw))
+        : 0;
+    const published =
+      typeof anyP.published === "boolean" ? anyP.published : true;
+
     return {
       ...anyP,
+      stockQty,
+      published,
       linkedCatalogProductId:
         typeof anyP.linkedCatalogProductId === "string" &&
         anyP.linkedCatalogProductId.trim()
@@ -98,6 +109,14 @@ export async function writeAdminDb(next: AdminDb) {
   dbVersion += 1;
   snapshot = null;
   pendingRead = null;
-  await ensureDbFile();
-  await fs.writeFile(getDbPath(), JSON.stringify(next, null, 2), "utf8");
+  try {
+    await ensureDbFile();
+    await fs.writeFile(getDbPath(), JSON.stringify(next, null, 2), "utf8");
+  } catch (err: unknown) {
+    const code = err && typeof err === "object" && "code" in err ? String((err as NodeJS.ErrnoException).code) : "";
+    if (isFsReadOnlyErrno(code)) {
+      throw new AdminDemoFsReadOnlyError();
+    }
+    throw err;
+  }
 }

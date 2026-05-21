@@ -19,14 +19,17 @@ export type SiteConfig = {
   hours: string;
   logoText: string;
   menu: MenuItem[];
+  /** Ordered product ids for the home page leaders section. */
+  homeLeadersProductIds: string[];
 };
 
 export const DEFAULT_SITE_CONFIG: SiteConfig = {
   storeName: "ГДЕ ФАЗАН?!",
   logoText: "TH",
-  phone: "+7 (900) 000-00-00",
-  email: "sales@example.com",
+  phone: "+7 (999) 900-19-10",
+  email: "info@gde-fazan.ru",
   hours: "Пн–Сб 10:00–19:00",
+  homeLeadersProductIds: [],
   menu: [
     { id: "home", label: "Главная", href: "/" },
     { id: "thermal-scopes-top", label: "Теплоприцелы", href: "/catalog/thermal-scopes" },
@@ -58,6 +61,7 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
     },
     { id: "warranty", label: "Гарантия и возврат", href: "/warranty" },
     { id: "shipping", label: "Доставка и оплата", href: "/shipping-payment" },
+    { id: "contacts", label: "Контакты", href: "/contacts" },
   ],
 };
 
@@ -76,7 +80,24 @@ export function loadSiteConfigFromStorage(): SiteConfig | null {
     const additions = DEFAULT_SITE_CONFIG.menu.filter((m) => !existingIds.has(m.id));
     const mergedMenu = [...parsed.menu, ...additions];
 
-    return { ...parsed, menu: mergedMenu };
+    const leaders = Array.isArray((parsed as Partial<SiteConfig>).homeLeadersProductIds)
+      ? ((parsed as Partial<SiteConfig>).homeLeadersProductIds as unknown[]).filter(
+          (x): x is string => typeof x === "string" && x.trim().length > 0,
+        )
+      : DEFAULT_SITE_CONFIG.homeLeadersProductIds;
+
+    // Backward compat: migrate old key if present.
+    const legacy = Array.isArray((parsed as any).homeFeaturedProductIds)
+      ? ((parsed as any).homeFeaturedProductIds as unknown[]).filter(
+          (x: unknown): x is string => typeof x === "string" && x.trim().length > 0,
+        )
+      : [];
+
+    return {
+      ...parsed,
+      menu: mergedMenu,
+      homeLeadersProductIds: leaders.length ? leaders : legacy,
+    };
   } catch {
     return null;
   }

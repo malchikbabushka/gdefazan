@@ -21,6 +21,7 @@ import {
   DEFAULT_SITE_CONFIG,
   loadSiteConfigFromStorage,
 } from "@/lib/site-config";
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -288,7 +289,16 @@ export function SiteHeader() {
 
   useEffect(() => {
     const fromStorage = loadSiteConfigFromStorage();
-    if (fromStorage) setConfig(fromStorage);
+    fetchWithTimeout("/api/site-config", undefined, 10_000)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        const apiCfg = data?.config as SiteConfig | undefined;
+        if (fromStorage) setConfig(fromStorage);
+        else if (apiCfg) setConfig(apiCfg);
+      })
+      .catch(() => {
+        if (fromStorage) setConfig(fromStorage);
+      });
   }, []);
 
   const menu = useMemo(() => config.menu, [config.menu]);
@@ -325,16 +335,6 @@ export function SiteHeader() {
             </div>
 
             <div className="flex items-center gap-2">
-              <Link
-                href="/admin"
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "lg" }),
-                  "hidden h-9 rounded-2xl border-yellow-400/15 bg-yellow-400/8 px-3 text-xs font-semibold text-yellow-100/95 hover:bg-yellow-400/12 md:inline-flex",
-                )}
-              >
-                <Shield className="mr-2 h-4 w-4" />
-                Админка
-              </Link>
               <Button
                 variant="outline"
                 className="h-9 rounded-2xl border-white/10 bg-white/5 px-3 text-xs font-semibold text-zinc-50 hover:bg-white/10"

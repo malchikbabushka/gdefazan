@@ -2,20 +2,14 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { PRODUCTS } from "@/lib/products";
+import { adminProductToCatalogProduct } from "@/lib/admin-catalog-map";
 import { formatRub } from "@/lib/catalog-logic";
 import { absoluteUrl } from "@/lib/seo";
 import { parseSpecsText } from "@/lib/specs-text";
 import { findAdminOverlayForCatalogProduct } from "@/lib/server/catalog-admin-merge";
-import { readAdminDb } from "@/lib/server/admin-db";
+import { repoFindAdminProductBySlug } from "@/lib/server/admin-repository";
 import type { Product } from "@/lib/catalog-types";
-import {
-  slugify,
-  findProductBySlug,
-  getProductUrl,
-  getCategoryLabel,
-  getCategoryPath,
-} from "@/lib/product-utils";
+import { slugify, findProductBySlug, getProductUrl } from "@/lib/product-utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -44,11 +38,11 @@ type Props = {
   params: Promise<{ slug: string }>;
 };
 
-export const dynamic = "force-dynamic";
+/** ISR: HTML из CDN/edge, без холодного Node на каждый заход (force-dynamic это отключал). */
 export const revalidate = 60;
 
 export async function generateStaticParams() {
-  return PRODUCTS.map((p) => ({ slug: slugify(p.name) }));
+  return [];
 }
 
 async function findProductOrAdminBySlug(slug: string): Promise<
@@ -60,33 +54,11 @@ async function findProductOrAdminBySlug(slug: string): Promise<
   if (fromCatalog) return { kind: "catalog", product: fromCatalog };
 
   // Allow PDP for products created in admin (even if not present in src/lib/products.ts)
-  const db = await readAdminDb();
-  const admin = db.products.find((p) => slugify(p.name) === slug);
+  const admin = await repoFindAdminProductBySlug(slug);
   if (!admin) return null;
 
-  if (admin.category !== "thermal-scope" && admin.category !== "thermal-monocular") {
-    return null;
-  }
-
-  const id =
-    admin.linkedCatalogProductId && admin.linkedCatalogProductId.trim()
-      ? admin.linkedCatalogProductId.trim()
-      : `a_${admin.id}`;
-
-  const product: Product = {
-    id,
-    name: admin.name,
-    brand: admin.brand,
-    type: admin.category === "thermal-monocular" ? "monocular" : "scope",
-    priceRub: Number(admin.priceRub ?? 0),
-    matrix: "640×512",
-    lensMm: 35,
-    magnificationMin: 1,
-    magnificationMax: 4,
-    hasRangefinder: false,
-    inStock: Boolean(admin.inStock ?? true),
-    popularity: 50,
-  };
+  const product = adminProductToCatalogProduct(admin);
+  if (!product) return null;
 
   return { kind: "admin", product };
 }
@@ -154,15 +126,20 @@ export default async function ProductPage({ params }: Props) {
   const admin = await findAdminOverlayForCatalogProduct(product);
   const adminPhotoUrls =
     admin?.photoDataUrls?.filter((u) => typeof u === "string" && u.length > 0) ?? [];
-  // Avoid embedding base64 in HTML; public URLs can be rendered directly.
+  const adminPhotoCount =
+    typeof admin?.photoCount === "number" && admin.photoCount > 0
+      ? admin.photoCount
+      : adminPhotoUrls.length;
+  // Same-origin only in HTML; Supabase Storage — через /api/.../photo (без VPN).
   const galleryImages = adminPhotoUrls
     .filter(
       (u) =>
         !u.startsWith("data:") &&
+        !u.includes("supabase.co") &&
         (u.startsWith("/") || u.startsWith("http://") || u.startsWith("https://")),
     )
     .slice(0, 12);
-  const useRemoteGallery = adminPhotoUrls.length > 0 && galleryImages.length === 0;
+  const useRemoteGallery = Boolean(admin && adminPhotoCount > 0);
 
   const crumbs = productBreadcrumbs(product);
   const typeLabel =
@@ -231,9 +208,7 @@ export default async function ProductPage({ params }: Props) {
             images={galleryImages}
             productName={product.name}
             remoteAdminId={useRemoteGallery ? admin!.id : null}
-            remotePhotoCount={
-              useRemoteGallery ? Math.min(adminPhotoUrls.length, 12) : 0
-            }
+            remotePhotoCount={useRemoteGallery ? Math.min(adminPhotoCount, 12) : 0}
           />
 
           {/* Description / Specs tabs */}

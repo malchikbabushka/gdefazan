@@ -44,6 +44,21 @@ export default function AdminPages() {
     setStatus({ kind: "idle" });
   }, [current.title, current.body, selectedKey]);
 
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/admin/cms/${selectedKey}`, { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.persisted || !data.content) return;
+        setTitle(data.content.title as string);
+        setBody(data.content.body as string);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedKey]);
+
   const preview = useMemo<PageContent>(() => ({ title, body }), [title, body]);
 
   return (
@@ -53,8 +68,7 @@ export default function AdminPages() {
           Редактор страниц (демо)
         </CardTitle>
         <p className="text-sm text-zinc-200/75">
-          Редактирование заголовка и текста. Текст поддерживает абзацы и списки (строки
-          начиная с <span className="font-mono">- </span>).
+          Заголовок и текст страницы. При Supabase контент в Postgres; иначе — localStorage.
         </p>
       </CardHeader>
       <CardContent className="p-6 pt-0">
@@ -115,12 +129,26 @@ export default function AdminPages() {
                 <Button
                   type="button"
                   className="h-10 rounded-xl bg-yellow-400 px-4 text-sm font-semibold text-black hover:bg-yellow-300"
-                  onClick={() => {
+                  onClick={async () => {
                     const next = { ...(stored ?? {}) };
                     next[selectedKey] = { title, body };
                     setStored(next);
                     savePagesToStorage(next);
-                    setStatus({ kind: "ok", text: "Сохранено." });
+                    const put = await fetch(`/api/admin/cms/${selectedKey}`, {
+                      method: "PUT",
+                      credentials: "include",
+                      headers: { "content-type": "application/json" },
+                      body: JSON.stringify({ title, body }),
+                    });
+                    const pj = (await put.json().catch(() => ({}))) as { error?: string };
+                    if (put.ok) {
+                      setStatus({ kind: "ok", text: "Сохранено в браузере и на сервере." });
+                    } else {
+                      setStatus({
+                        kind: "ok",
+                        text: `Сохранено в браузере. Сервер: ${pj.error ?? "нужен Supabase."}`,
+                      });
+                    }
                   }}
                 >
                   Сохранить

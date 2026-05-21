@@ -1,0 +1,10 @@
+# Скопируйте в public_html сайта как .htaccess
+# Замените LOGIN и gdefazan.ru на свои (путь из панели SprintHost → Сайты).
+
+SetEnv GHOST_NODE_VERSION_CHECK false
+PassengerStartupFile server.js
+PassengerResolveSymlinksInDocumentRoot on
+Require all granted
+PassengerAppType node
+PassengerAppRoot /home/LOGIN/domains/gdefazan.ru/public_html
+Options -MultiViews

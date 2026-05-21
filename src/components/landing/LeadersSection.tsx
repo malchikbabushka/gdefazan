@@ -1,13 +1,32 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ProductCard } from "@/components/home/ProductCard";
 import { useAppProducts } from "@/components/providers/AppProviders";
+import type { SiteConfig } from "@/lib/site-config";
+import { DEFAULT_SITE_CONFIG } from "@/lib/site-config";
 
 export function LeadersSection() {
   const { products } = useAppProducts();
+  const [cfg, setCfg] = useState<SiteConfig>(DEFAULT_SITE_CONFIG);
+
+  useEffect(() => {
+    // Load leaders order from server config; keep it fresh enough for admin updates.
+    fetch(`/api/site-config?ts=${Date.now()}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.config) setCfg(data.config as SiteConfig);
+      })
+      .catch(() => {});
+  }, []);
 
   const leaders = useMemo(() => {
+    const ids = Array.isArray(cfg.homeLeadersProductIds) ? cfg.homeLeadersProductIds : [];
+    if (ids.length) {
+      const byId = new Map(products.map((p) => [p.id, p] as const));
+      return ids.map((id) => byId.get(id)).filter((p): p is NonNullable<typeof p> => Boolean(p)).slice(0, 6);
+    }
+
     const items = [...products];
     items.sort((a, b) => b.popularity - a.popularity);
 
@@ -19,7 +38,7 @@ export function LeadersSection() {
 
     const top = items.slice(0, 6).filter((p) => p.id !== sytong?.id);
     return sytong ? [sytong, ...top].slice(0, 6) : top;
-  }, [products]);
+  }, [cfg.homeLeadersProductIds, products]);
 
   return (
     <section className="mt-10">

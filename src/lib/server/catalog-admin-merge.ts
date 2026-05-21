@@ -1,7 +1,7 @@
 import type { Product } from "@/lib/catalog-types";
 import type { AdminProduct } from "@/lib/admin-types";
 import { adminProductMatchesCatalogProduct, slugify } from "@/lib/product-utils";
-import { readAdminDbCached } from "@/lib/server/admin-db";
+import { readAdminProductsForMergeCached, repoFindAdminOverlayForCatalog } from "@/lib/server/admin-repository";
 
 /**
  * Находит запись админки для карточки витрины:
@@ -11,17 +11,18 @@ import { readAdminDbCached } from "@/lib/server/admin-db";
 export async function findAdminOverlayForCatalogProduct(
   product: Product,
 ): Promise<AdminProduct | undefined> {
-  const db = await readAdminDbCached();
-  const byId = db.products.find(
-    (a) =>
-      typeof a.linkedCatalogProductId === "string" &&
-      a.linkedCatalogProductId.trim() === product.id,
-  );
-  if (byId) return byId;
+  // Fast path: avoid loading full admin_products list on PDP render.
+  const fast = await repoFindAdminOverlayForCatalog({
+    catalogId: product.id,
+    name: product.name,
+    brand: product.brand,
+  });
+  if (fast) return fast;
 
   const slug = slugify(product.name);
-  const byNameSlug = db.products.find((a) => slugify(a.name) === slug);
+  const products = await readAdminProductsForMergeCached();
+  const byNameSlug = products.find((a) => slugify(a.name) === slug);
   if (byNameSlug) return byNameSlug;
 
-  return db.products.find((a) => adminProductMatchesCatalogProduct(a, product));
+  return products.find((a) => adminProductMatchesCatalogProduct(a, product));
 }

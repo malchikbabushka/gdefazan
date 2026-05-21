@@ -2,6 +2,12 @@
 
 Демо-структура современного интернет-магазина **тепловизионных прицелов и монокуляров для охоты** на **Next.js (App Router)** и **Tailwind CSS** в тёмной (military) стилистике.
 
+### База и админка (Supabase)
+
+Полная инструкция: **[`supabase/README.md`](./supabase/README.md)** — SQL, бакет `product-images`, пользователь Auth, переменные окружения. Без Supabase используется демо-файл `data/admin-db.json`.
+
+**Деплой в РФ:** **[`docs/sprinthost-deploy.md`](./docs/sprinthost-deploy.md)** ([Спринтхост](https://sprinthost.ru/) + домен REG.RU). Репозиторий: [github.com/malchikbabushka/gdefazan](https://github.com/malchikbabushka/gdefazan).
+
 ### Что уже сделано
 
 - **Главная страница**: героический баннер + каталог
@@ -52,6 +58,26 @@ To learn more about Next.js, take a look at the following resources:
 - [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Деплой на Vercel (админка + Supabase)
+
+Сайт задеплоить можно за пару минут; **подключить GitHub и нажать Deploy может только владелец аккаунта** — заранее сделать это «за вас» из этого репозитория нельзя.
+
+1. Залейте проект в **GitHub** (или GitLab / Bitbucket, как удобно).
+2. Зайдите на [vercel.com/new](https://vercel.com/new) → **Import** вашего репозитория.
+3. **Framework Preset:** Next.js (определится сам). **Root Directory:** корень (где лежит `package.json`).
+4. В **Environment Variables** добавьте переменные из [`.env.example`](./.env.example):
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`  
+   Для **Production**, **Preview** и **Development** можно продублировать одни и те же значения.
+5. Опционально: `NEXT_PUBLIC_SITE_URL` = `https://<ваш-проект>.vercel.app` (удобно для SEO/метаданных).
+6. **Deploy**. После сборки админка: `https://<ваш-домен>/admin/login` — создайте пользователя в **Supabase → Authentication → Users** и войдите.
+7. В Supabase выполните SQL из `supabase/migrations/` (см. [`supabase/README.md`](./supabase/README.md)), иначе таблиц не будет.
+
+Локально без облака: не задавайте переменные Supabase — используется `data/admin-db.json`. **На Vercel файл не подходит для постоянных правок**; для продакшена нужен Supabase (или другая БД).
+
+---
 
 ## Deploy on Vercel
 

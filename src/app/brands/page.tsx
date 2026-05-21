@@ -1,4 +1,8 @@
+import { SimpleContent } from "@/components/content/SimpleContent";
+import { repoGetCmsPage } from "@/lib/server/admin-repository";
 import type { Metadata } from "next";
+
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Бренды",
@@ -8,17 +12,14 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export default function BrandsPage() {
+export default async function BrandsPage() {
+  const content = await repoGetCmsPage("brands");
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">
-          Бренды
-        </h1>
-        <p className="mt-2 text-sm text-zinc-200/75">
-          Демо-страница. Сюда обычно выводят список брендов, фильтры и логотипы.
-        </p>
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      <SimpleContent content={content} />
+      <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6">
+        <div className="text-sm font-semibold text-zinc-50">Примеры брендов (витрина)</div>
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {["Raven", "Kestrel", "Vanguard", "Sentinel", "Nomad"].map((b) => (
             <div
               key={b}
@@ -32,4 +33,3 @@ export default function BrandsPage() {
     </div>
   );
 }
-

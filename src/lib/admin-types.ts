@@ -10,6 +10,10 @@ export type AdminProduct = {
   name: string;
   brand: string;
   priceRub: number;
+  /** Остаток на складе (штук). */
+  stockQty: number;
+  /** Виден на витрине; false — не в каталоге/поиске, PDP по slug — 404. */
+  published: boolean;
   category: AdminProductCategory;
   magnification: string;
   lensDiameterMm: number;
@@ -25,9 +29,22 @@ export type AdminProduct = {
   updatedAt: string;
 };
 
+export type AdminOrderItem = {
+  productId: string | null;
+  productName: string;
+  quantity: number;
+  priceRub: number;
+};
+
 export type AdminOrder = {
   id: string;
   totalRub: number;
   createdAt: string;
+  status?: string;
+  customerEmail?: string | null;
+  customerPhone?: string | null;
+  customerName?: string | null;
+  notes?: string | null;
+  items?: AdminOrderItem[];
 };
 

@@ -37,7 +37,13 @@ export function ProductGallery({
         (_, i) => `/api/admin/products/${remoteAdminId}/photo?index=${i}`,
       );
     }
-    return images.filter(Boolean);
+    // Только same-origin: не тянем *.supabase.co в браузере.
+    return images.filter(
+      (u) =>
+        u.startsWith("/") ||
+        u.startsWith("/api/") ||
+        u.startsWith("data:"),
+    );
   }, [images, remoteAdminId, remotePhotoCount]);
   const [active, setActive] = useState(0);
 
@@ -91,7 +97,8 @@ export function ProductGallery({
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={src} alt="" className="h-full w-full object-cover" />
               ) : (
-                <Image src={src} alt="" fill className="object-cover" sizes="80px" />
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={src} alt="" className="h-full w-full object-cover" />
               )}
             </button>
           ))}

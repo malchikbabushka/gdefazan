@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import type { Product } from "@/lib/catalog-types";
 import { PRODUCTS } from "@/lib/products";
 import type { AdminProduct } from "@/lib/admin-types";
-import { adminProductMatchesCatalogProduct } from "@/lib/product-utils";
+import { catalogProductsFromAdmin } from "@/lib/admin-catalog-map";
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 
-const STORAGE_KEY = "thermal-shop:products:v1";
+const STORAGE_KEY = "thermal-shop:products:v2";
 
 export function loadProductsFromStorage(): Product[] | null {
   if (typeof window === "undefined") return null;
@@ -30,91 +31,26 @@ export function useProducts() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const fromStorage = loadProductsFromStorage();
-    if (fromStorage && Array.isArray(fromStorage) && fromStorage.length > 0) {
-      setProducts(fromStorage);
-    }
     setHydrated(true);
   }, []);
 
   useEffect(() => {
     if (!hydrated) return;
-    async function mergeAdminProducts() {
+    async function loadFromAdmin() {
       try {
-        const r = await fetch("/api/admin/products", { cache: "no-store" });
+        const r = await fetchWithTimeout("/api/admin/products", { cache: "no-store" }, 12_000);
         if (!r.ok) return;
         const data = (await r.json()) as { products?: AdminProduct[] };
         const admin = Array.isArray(data.products) ? data.products : [];
         setAdminProducts(admin);
-
-        setProducts((prev) => {
-          const byId = new Map(prev.map((p) => [p.id, p] as const));
-
-          // Overlay existing by linkedCatalogProductId or slug match.
-          for (const a of admin) {
-            const linked =
-              typeof a.linkedCatalogProductId === "string" &&
-              a.linkedCatalogProductId.trim()
-                ? a.linkedCatalogProductId.trim()
-                : null;
-            if (linked && byId.has(linked)) {
-              const base = byId.get(linked)!;
-              byId.set(linked, {
-                ...base,
-                name: a.name || base.name,
-                brand: a.brand || base.brand,
-                priceRub: Number.isFinite(a.priceRub) ? a.priceRub : base.priceRub,
-                inStock: a.inStock ?? base.inStock,
-              });
-              continue;
-            }
-
-            const match = prev.find((p) => adminProductMatchesCatalogProduct(a, p));
-            if (match) {
-              const base = byId.get(match.id)!;
-              byId.set(match.id, {
-                ...base,
-                name: a.name || base.name,
-                brand: a.brand || base.brand,
-                priceRub: Number.isFinite(a.priceRub) ? a.priceRub : base.priceRub,
-                inStock: a.inStock ?? base.inStock,
-              });
-              continue;
-            }
-
-            // Add as a new catalog item (best-effort defaults).
-            if (a.category === "thermal-scope" || a.category === "thermal-monocular") {
-              const id = `a_${a.id}`;
-              if (byId.has(id)) continue;
-              byId.set(id, {
-                id,
-                brand: a.brand || "Brand",
-                name: a.name || "Product",
-                type: a.category === "thermal-monocular" ? "monocular" : "scope",
-                priceRub: Number(a.priceRub ?? 0),
-                matrix: "640×512",
-                lensMm: 35,
-                magnificationMin: 1,
-                magnificationMax: 4,
-                hasRangefinder: false,
-                inStock: Boolean(a.inStock ?? true),
-                popularity: 50,
-              });
-            }
-          }
-
-          return Array.from(byId.values());
-        });
+        setProducts(catalogProductsFromAdmin(admin));
       } catch {
-        // ignore
+        /* ignore */
       }
     }
 
-    mergeAdminProducts();
-    return () => {
-    };
+    void loadFromAdmin();
   }, [hydrated]);
 
   return { products, adminProducts, setProducts, hydrated };
 }
-

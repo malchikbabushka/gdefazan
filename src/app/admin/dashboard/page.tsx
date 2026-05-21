@@ -52,11 +52,15 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/admin/stats")
-      .then((r) => r.json())
+    fetch("/api/admin/stats", { credentials: "include" })
+      .then(async (r) => {
+        if (r.status === 401) throw new Error("Требуется вход в админку");
+        if (!r.ok) throw new Error("Не удалось загрузить статистику");
+        return r.json() as Promise<Stats>;
+      })
       .then((data) => {
         if (cancelled) return;
-        setStats(data as Stats);
+        setStats(data);
       })
       .catch((e) => setError(e instanceof Error ? e.message : "Ошибка загрузки"));
     return () => {
@@ -73,7 +77,7 @@ export default function AdminDashboardPage() {
               Дашборд
             </CardTitle>
             <p className="mt-2 text-sm text-zinc-200/75">
-              Демонстрационная статистика (за последние 30 дней) и данные по товарам.
+              Статистика за 30 дней и склад: из Supabase или из демо-файла заказов.
             </p>
           </div>
           <Badge className="hidden border border-white/10 bg-black/30 text-zinc-200/70 hover:bg-black/30 sm:inline-flex">
@@ -95,7 +99,7 @@ export default function AdminDashboardPage() {
           title="Выручка (30 дней)"
           value={stats ? formatRub(stats.revenueRub) : "—"}
           icon={<ShoppingCart className="h-5 w-5" />}
-          hint="На базе демо-заказов из JSON"
+          hint="Заказы с оформления (демо-платёж)"
         />
         <StatCard
           title="Заказы (30 дней)"

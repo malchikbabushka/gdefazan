@@ -1,6 +1,8 @@
 import { SimpleContent } from "@/components/content/SimpleContent";
-import { getPageContent, loadPagesFromStorage } from "@/lib/pages-store";
+import { repoGetCmsPage } from "@/lib/server/admin-repository";
 import type { Metadata } from "next";
+
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Доставка и оплата",
@@ -10,13 +12,11 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export default function ShippingPaymentPage() {
-  const stored = loadPagesFromStorage();
-  const content = getPageContent("shipping-payment", stored);
+export default async function ShippingPaymentPage() {
+  const content = await repoGetCmsPage("shipping-payment");
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <SimpleContent content={content} />
     </div>
   );
 }
-

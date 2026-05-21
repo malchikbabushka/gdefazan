@@ -1,0 +1,6 @@
+# Не отправлять на Vercel при CLI-деплое (секреты и мусор)
+.env
+.env.*
+!.env.example
+node_modules
+.git

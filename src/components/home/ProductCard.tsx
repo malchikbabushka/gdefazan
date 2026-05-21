@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAppCart, useAppProducts } from "@/components/providers/AppProviders";
+import { adminProductPhotoUrls } from "@/lib/admin-product-images";
 
 type Props = {
   product: Product;
@@ -20,24 +21,8 @@ export function ProductCard({ product }: Props) {
   const images = useMemo(() => {
     for (const a of adminProducts) {
       if (!adminProductMatchesCatalogProduct(a, product)) continue;
-
-      const publicList = Array.isArray(a.photoDataUrls)
-        ? a.photoDataUrls.filter((u) => typeof u === "string" && u.length > 0)
-        : [];
-      const count =
-        typeof a.photoCount === "number" && Number.isFinite(a.photoCount)
-          ? a.photoCount
-          : publicList.length;
-
-      if (count > 0) {
-        // Fewer parallel /photo requests on first paint (hover still shows first images).
-        const cap = Math.min(count, 4);
-        return Array.from(
-          { length: cap },
-          (_, i) => `/api/admin/products/${a.id}/photo?index=${i}`,
-        );
-      }
-      return publicList;
+      const urls = adminProductPhotoUrls(a, 4);
+      if (urls.length) return urls;
     }
     return [];
   }, [adminProducts, product]);
