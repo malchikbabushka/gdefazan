@@ -7,6 +7,7 @@ import { getSiteUrl } from "@/lib/seo";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { StorefrontShell } from "@/components/layout/StorefrontShell";
 import { getStorefrontCatalog } from "@/lib/server/storefront-catalog";
+import type { StorefrontCatalog } from "@/lib/storefront-catalog-types";
 
 const manrope = Manrope({
   variable: "--font-sans",
@@ -59,7 +60,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  let initialCatalog = { products: [], adminProducts: [] };
+  let initialCatalog: StorefrontCatalog = { products: [], adminProducts: [] };
   try {
     initialCatalog = await getStorefrontCatalog();
   } catch (e) {
