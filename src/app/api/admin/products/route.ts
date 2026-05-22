@@ -28,7 +28,7 @@ export async function GET(req: Request) {
   try {
     let products = await withTimeout(
       repoListProducts(includePhotos),
-      10_000,
+      25_000,
       "repoListProducts",
     );
     if (isSupabaseAuthConfigured()) {
@@ -46,10 +46,12 @@ export async function GET(req: Request) {
       },
     );
   } catch (e) {
-    console.error(e);
+    console.error("[GET /api/admin/products]", e);
+    const message = e instanceof Error ? e.message : "unknown";
     return NextResponse.json(
-      { products: [] },
+      { products: [], error: message },
       {
+        status: 503,
         headers: {
           "Cache-Control": "private, no-store, max-age=0",
         },

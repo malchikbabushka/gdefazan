@@ -141,24 +141,39 @@ async function sbReplaceProductImages(productId: string, urls: string[]) {
 
 // --- Products ---
 
+const ADMIN_PRODUCTS_SELECT = `
+      id, name, brand, price_rub, stock_qty, published, category, magnification, lens_diameter_mm, in_stock,
+      linked_catalog_product_id, description, specs_text, created_at, updated_at
+    `;
+
 export async function repoListProducts(includePhotos: boolean): Promise<AdminProduct[]> {
   if (!isSupabaseConfigured()) {
     const db = await readAdminDb();
     return db.products.map((p) => mapFileProductForList(p, includePhotos));
   }
   const sb = createServiceRoleClient();
-  const { data, error } = await sb
+  const withImages = await sb
     .from("admin_products")
     .select(
       `
-      id, name, brand, price_rub, stock_qty, published, category, magnification, lens_diameter_mm, in_stock,
-      linked_catalog_product_id, description, specs_text, created_at, updated_at,
+      ${ADMIN_PRODUCTS_SELECT},
       product_images ( public_url, sort_order, storage_path )
     `,
     )
     .order("updated_at", { ascending: false });
-  if (error) throw error;
-  const rows = (data ?? []) as DbProductRow[];
+
+  let rows: DbProductRow[];
+  if (withImages.error) {
+    console.error("[repoListProducts] with images:", withImages.error.message);
+    const plain = await sb
+      .from("admin_products")
+      .select(ADMIN_PRODUCTS_SELECT)
+      .order("updated_at", { ascending: false });
+    if (plain.error) throw plain.error;
+    rows = (plain.data ?? []) as DbProductRow[];
+  } else {
+    rows = (withImages.data ?? []) as DbProductRow[];
+  }
   return rows.map((r) => rowToAdminProduct(r, includePhotos));
 }
 
