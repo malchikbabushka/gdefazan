@@ -16,6 +16,7 @@ export function adminProductPhotoUrls(
   const cap = Math.min(Math.max(count, publicList.length), max);
   return Array.from(
     { length: cap },
-    (_, i) => `/api/admin/products/${encodeURIComponent(a.id)}/photo?index=${i}`,
+    (_, i) =>
+      `/api/storefront/products/${encodeURIComponent(a.id)}/photo?index=${i}`,
   );
 }

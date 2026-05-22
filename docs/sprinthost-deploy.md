@@ -103,6 +103,7 @@ npm22 run build
 
 ```apache
 SetEnv GHOST_NODE_VERSION_CHECK false
+SetEnv NODE_ENV production
 PassengerStartupFile server.js
 PassengerResolveSymlinksInDocumentRoot on
 Require all granted
@@ -119,6 +120,27 @@ Options -MultiViews
 mkdir -p tmp
 touch tmp/restart.txt
 ```
+
+---
+
+## 5.1. Ошибка 500 Internal Server Error
+
+Чаще всего Passenger стартует Next в **dev**-режиме (нет `NODE_ENV=production`).
+
+В `.htaccess` должна быть строка `SetEnv NODE_ENV production` (см. шаблон `deploy/sprinthost.htaccess.example`), затем `touch tmp/restart.txt`.
+
+На SSH — лог Passenger (см. `PassengerAppLogFile` в `.htaccess`) и ручной запуск:
+
+```bash
+cd ~/domains/gdefazan.ru/public_html
+mkdir -p tmp
+tail -50 tmp/passenger-app.log
+NODE_ENV=production PORT=45678 node22 server.js
+```
+
+Журналы Apache: в панели **Сайты → gdefazan.ru → журналы веб-сервера** (включите, если выключены). Каталог `~/domains/…/logs/` появляется после включения, не создавайте его вручную «пустым».
+
+Если `node22 server.js` падает с текстом ошибки — пришлите его в поддержку или в чат; типично: нет `node_modules` → `npm22 ci`.
 
 ---
 

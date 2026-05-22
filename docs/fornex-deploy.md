@@ -1,6 +1,7 @@
 # Деплой на Fornex (VPS) + домен REG.RU
 
-> **Актуальная инструкция для хостинга:** [`sprinthost-deploy.md`](./sprinthost-deploy.md) ([Спринтхост](https://sprinthost.ru/)).
+> **Актуальная инструкция для VPS:** [`timeweb-deploy.md`](./timeweb-deploy.md) ([Timeweb Cloud](https://timeweb.cloud/)).  
+> Shared-хостинг: [`sprinthost-deploy.md`](./sprinthost-deploy.md).
 
 ---
 

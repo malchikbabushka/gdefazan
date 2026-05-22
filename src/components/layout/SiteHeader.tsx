@@ -271,7 +271,7 @@ export function SiteHeader() {
           : publicUrls.length;
       const thumb =
         publicThumb ??
-        (count > 0 ? `/api/admin/products/${a.id}/photo?index=0` : null);
+        (count > 0 ? `/api/storefront/products/${a.id}/photo?index=0` : null);
       if (!thumb) continue;
 
       map.set(`a_${a.id}`, thumb);

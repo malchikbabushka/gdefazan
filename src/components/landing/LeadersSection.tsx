@@ -24,7 +24,11 @@ export function LeadersSection() {
     const ids = Array.isArray(cfg.homeLeadersProductIds) ? cfg.homeLeadersProductIds : [];
     if (ids.length) {
       const byId = new Map(products.map((p) => [p.id, p] as const));
-      return ids.map((id) => byId.get(id)).filter((p): p is NonNullable<typeof p> => Boolean(p)).slice(0, 6);
+      const picked = ids
+        .map((id) => byId.get(id))
+        .filter((p): p is NonNullable<typeof p> => Boolean(p))
+        .slice(0, 6);
+      if (picked.length) return picked;
     }
 
     const items = [...products];

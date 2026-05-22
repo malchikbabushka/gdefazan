@@ -8,6 +8,7 @@ import type { PageContent, PageKey } from "@/lib/pages-store";
 import { DEFAULT_PAGES } from "@/lib/pages-store";
 import type { SiteConfig } from "@/lib/site-config";
 import { DEFAULT_SITE_CONFIG } from "@/lib/site-config";
+import { withTimeout } from "@/lib/server/with-timeout";
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
 
@@ -825,15 +826,21 @@ function deepMergeSiteConfig(stored: Record<string, unknown> | null | undefined)
 export async function repoGetSiteConfig(): Promise<SiteConfig> {
   if (!isSupabaseConfigured()) return DEFAULT_SITE_CONFIG;
   try {
-    const sb = createServiceRoleClient();
-    const { data, error } = await sb
-      .from("site_settings")
-      .select("config")
-      .eq("id", "default")
-      .maybeSingle();
-    if (error) throw error;
-    const raw = data?.config as Record<string, unknown> | undefined;
-    return deepMergeSiteConfig(raw);
+    return await withTimeout(
+      (async () => {
+        const sb = createServiceRoleClient();
+        const { data, error } = await sb
+          .from("site_settings")
+          .select("config")
+          .eq("id", "default")
+          .maybeSingle();
+        if (error) throw error;
+        const raw = data?.config as Record<string, unknown> | undefined;
+        return deepMergeSiteConfig(raw);
+      })(),
+      8_000,
+      "repoGetSiteConfig",
+    );
   } catch (e) {
     console.error("[repoGetSiteConfig]", e);
     return DEFAULT_SITE_CONFIG;
@@ -857,18 +864,24 @@ export async function repoGetCmsPage(key: PageKey): Promise<PageContent> {
   const fallback = DEFAULT_PAGES[key];
   if (!isSupabaseConfigured()) return fallback;
   try {
-    const sb = createServiceRoleClient();
-    const { data, error } = await sb
-      .from("cms_pages")
-      .select("title, body")
-      .eq("page_key", key)
-      .maybeSingle();
-    if (error) throw error;
-    if (!data) return fallback;
-    return {
-      title: typeof data.title === "string" && data.title.trim() ? data.title : fallback.title,
-      body: typeof data.body === "string" ? data.body : fallback.body,
-    };
+    return await withTimeout(
+      (async () => {
+        const sb = createServiceRoleClient();
+        const { data, error } = await sb
+          .from("cms_pages")
+          .select("title, body")
+          .eq("page_key", key)
+          .maybeSingle();
+        if (error) throw error;
+        if (!data) return fallback;
+        return {
+          title: typeof data.title === "string" && data.title.trim() ? data.title : fallback.title,
+          body: typeof data.body === "string" ? data.body : fallback.body,
+        };
+      })(),
+      8_000,
+      `repoGetCmsPage(${key})`,
+    );
   } catch (e) {
     console.error("[repoGetCmsPage]", key, e);
     return fallback;

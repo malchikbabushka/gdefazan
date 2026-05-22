@@ -6,6 +6,7 @@ import { OrganizationJsonLd, WebSiteJsonLd } from "@/components/seo/JsonLd";
 import { getSiteUrl } from "@/lib/seo";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { StorefrontShell } from "@/components/layout/StorefrontShell";
+import { getStorefrontCatalog } from "@/lib/server/storefront-catalog";
 
 const manrope = Manrope({
   variable: "--font-sans",
@@ -53,11 +54,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  let initialCatalog = { products: [], adminProducts: [] };
+  try {
+    initialCatalog = await getStorefrontCatalog();
+  } catch (e) {
+    console.error("[layout] getStorefrontCatalog", e);
+  }
+
   return (
     <html
       lang="ru"
@@ -65,7 +73,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <TooltipProvider>
-          <AppProviders>
+          <AppProviders initialCatalog={initialCatalog}>
             <StorefrontShell>{children}</StorefrontShell>
             <OrganizationJsonLd />
             <WebSiteJsonLd />

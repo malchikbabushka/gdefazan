@@ -5,6 +5,7 @@ import type { Product } from "@/lib/catalog-types";
 import type { AdminProduct } from "@/lib/admin-types";
 import { useProducts } from "@/lib/products-store";
 import { useCart } from "@/lib/cart-store";
+import type { StorefrontCatalog } from "@/lib/storefront-catalog-types";
 
 type ProductsCtx = {
   products: Product[];
@@ -17,8 +18,14 @@ type CartCtx = ReturnType<typeof useCart>;
 const ProductsContext = createContext<ProductsCtx | null>(null);
 const CartContext = createContext<CartCtx | null>(null);
 
-export function AppProviders({ children }: { children: React.ReactNode }) {
-  const productsStore = useProducts();
+export function AppProviders({
+  children,
+  initialCatalog,
+}: {
+  children: React.ReactNode;
+  initialCatalog?: StorefrontCatalog;
+}) {
+  const productsStore = useProducts(initialCatalog);
   const cart = useCart(productsStore.products);
 
   const productsValue = useMemo(

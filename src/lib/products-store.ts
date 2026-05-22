@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import type { Product } from "@/lib/catalog-types";
 import { PRODUCTS } from "@/lib/products";
 import type { AdminProduct } from "@/lib/admin-types";
-import { catalogProductsFromAdmin } from "@/lib/admin-catalog-map";
-import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
+import type { StorefrontCatalog } from "@/lib/storefront-catalog-types";
+import { fetchStorefrontCatalogClient } from "@/lib/storefront-catalog-client";
 
 const STORAGE_KEY = "thermal-shop:products:v2";
 
@@ -25,9 +25,11 @@ export function saveProductsToStorage(products: Product[]) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
 }
 
-export function useProducts() {
-  const [products, setProducts] = useState<Product[]>(PRODUCTS);
-  const [adminProducts, setAdminProducts] = useState<AdminProduct[]>([]);
+export function useProducts(initial?: StorefrontCatalog) {
+  const [products, setProducts] = useState<Product[]>(initial?.products ?? PRODUCTS);
+  const [adminProducts, setAdminProducts] = useState<AdminProduct[]>(
+    initial?.adminProducts ?? [],
+  );
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -38,12 +40,10 @@ export function useProducts() {
     if (!hydrated) return;
     async function loadFromAdmin() {
       try {
-        const r = await fetchWithTimeout("/api/admin/products", { cache: "no-store" }, 12_000);
-        if (!r.ok) return;
-        const data = (await r.json()) as { products?: AdminProduct[] };
-        const admin = Array.isArray(data.products) ? data.products : [];
-        setAdminProducts(admin);
-        setProducts(catalogProductsFromAdmin(admin));
+        const data = await fetchStorefrontCatalogClient();
+        if (!data) return;
+        setAdminProducts(data.admin);
+        setProducts(data.products);
       } catch {
         /* ignore */
       }

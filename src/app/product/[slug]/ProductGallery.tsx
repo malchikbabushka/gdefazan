@@ -34,7 +34,7 @@ export function ProductGallery({
     if (remoteAdminId && n > 0) {
       return Array.from(
         { length: Math.min(n, 12) },
-        (_, i) => `/api/admin/products/${remoteAdminId}/photo?index=${i}`,
+        (_, i) => `/api/storefront/products/${remoteAdminId}/photo?index=${i}`,
       );
     }
     // Только same-origin: не тянем *.supabase.co в браузере.

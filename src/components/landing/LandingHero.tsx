@@ -59,7 +59,10 @@ export function LandingHero() {
           {SLIDES.map((slide, idx) => (
             <div
               key={slide.id}
-              className="relative w-full flex-none"
+              className={cn(
+                "relative w-full flex-none",
+                idx !== active && "pointer-events-none",
+              )}
               aria-hidden={idx !== active}
             >
               {slide.imageSrc ? (

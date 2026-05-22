@@ -94,7 +94,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ? publicPhoto
       : absoluteUrl(publicPhoto)
     : hasAnyAdminPhoto && admin
-      ? absoluteUrl(`/api/admin/products/${admin.id}/photo?index=0`)
+      ? absoluteUrl(`/api/storefront/products/${admin.id}/photo?index=0`)
       : absoluteUrl("/logo.png");
 
   return {
@@ -176,7 +176,7 @@ export default async function ProductPage({ params }: Props) {
     (u) => u.startsWith("/") || u.startsWith("http://") || u.startsWith("https://"),
   );
   if (jsonLdImages.length === 0 && admin && adminPhotoUrls.length > 0) {
-    jsonLdImages = [absoluteUrl(`/api/admin/products/${admin.id}/photo?index=0`)];
+    jsonLdImages = [absoluteUrl(`/api/storefront/products/${admin.id}/photo?index=0`)];
   }
 
   return (
