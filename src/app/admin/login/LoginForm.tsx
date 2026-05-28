@@ -3,7 +3,6 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { isSupabaseAuthConfigured } from "@/lib/env/supabase";
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -41,19 +40,21 @@ export function LoginForm() {
     setError(null);
     setLoading(true);
     try {
-      const client = createSupabaseBrowserClient();
-      const { error: signErr } = await client.auth.signInWithPassword({
-        email: email.trim(),
-        password,
+      const res = await fetch("/api/admin/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
       });
-      if (signErr) {
-        setError(signErr.message);
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setError(data.error ?? "Не удалось выполнить вход");
         return;
       }
-      router.replace(next.startsWith("/admin") ? next : "/admin/dashboard");
-      router.refresh();
+      // Полная перезагрузка — middleware видит cookies сессии (client router иногда «молчит»).
+      const target = next.startsWith("/admin") ? next : "/admin/dashboard";
+      window.location.assign(target);
     } catch {
-      setError("Не удалось выполнить вход");
+      setError("Не удалось выполнить вход. Проверьте сеть и консоль браузера (F12).");
     } finally {
       setLoading(false);
     }
