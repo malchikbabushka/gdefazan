@@ -1,0 +1,37 @@
+# Автодеплой на Selectel VPS (без Vercel).
+# Один раз в GitHub → Settings → Secrets → Actions:
+#   SSH_HOST=135.181.139.208
+#   SSH_USER=root
+#   SSH_PRIVATE_KEY=<приватный ключ SSH>
+name: Deploy Selectel
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    if: ${{ secrets.SSH_PRIVATE_KEY != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script_stop: true
+          script: |
+            set -e
+            cd /var/www/gdefazan
+            git fetch origin main
+            git reset --hard origin/main
+            export NODE_OPTIONS=--max-old-space-size=1400
+            npm ci
+            npm run build
+            pm2 delete gdefazan 2>/dev/null || true
+            pm2 start deploy/ecosystem.config.cjs
+            pm2 save
+            curl -sf http://127.0.0.1:3000/api/storefront/products | head -c 200
+            echo ""

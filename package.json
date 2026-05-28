@@ -11,7 +11,6 @@
     "supabase:bootstrap": "tsx scripts/supabase-bootstrap.ts",
     "images:regen": "tsx scripts/regen-image-variants.ts",
     "products:adopt": "tsx scripts/adopt-catalog-into-admin.ts",
-    "deploy:vercel": "vercel deploy --prod --yes",
     "start:passenger": "NODE_ENV=production node server.js",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
