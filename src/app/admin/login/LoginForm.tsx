@@ -74,8 +74,39 @@ export function LoginForm() {
         </div>
       ) : null}
       {error ? (
-        <div className="rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-2 text-sm text-red-200/90">
-          {error}
+        <div className="space-y-3">
+          <div className="rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-2 text-sm text-red-200/90">
+            {error}
+          </div>
+          {/invalid api key|неверный ключ supabase/i.test(error) ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 w-full rounded-xl border-amber-400/40 text-amber-100"
+              disabled={loading}
+              onClick={async () => {
+                setLoading(true);
+                setError(null);
+                try {
+                  const res = await fetch("/api/admin/auth/demo", { method: "POST" });
+                  const data = (await res.json().catch(() => ({}))) as { error?: string };
+                  if (!res.ok) {
+                    setError(data.error ?? "Аварийный вход недоступен");
+                    return;
+                  }
+                  window.location.assign(
+                    next.startsWith("/admin") ? next : "/admin/dashboard",
+                  );
+                } catch {
+                  setError("Не удалось выполнить аварийный вход");
+                } finally {
+                  setLoading(false);
+                }
+              }}
+            >
+              Аварийный вход в админку (без Supabase)
+            </Button>
+          ) : null}
         </div>
       ) : null}
       <div>

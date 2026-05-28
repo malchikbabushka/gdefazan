@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isSupabaseAuthConfigured } from "@/lib/env/supabase";
+import { ADMIN_DEMO_COOKIE, isDemoAdminEnabled } from "@/lib/admin-demo";
 
 export async function middleware(request: NextRequest) {
   if (!isSupabaseAuthConfigured()) {
@@ -36,8 +37,11 @@ export async function middleware(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
 
+    const demoAdmin =
+      isDemoAdminEnabled() && request.cookies.get(ADMIN_DEMO_COOKIE)?.value === "1";
+
     if (pathname.startsWith("/admin") && !isLogin) {
-      if (!user) {
+      if (!user && !demoAdmin) {
         const url = request.nextUrl.clone();
         url.pathname = "/admin/login";
         url.searchParams.set("next", pathname);
