@@ -1,0 +1,1 @@
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFNC+X07aiSU5xuB8jSLeqEivcAh4LLfnsmznusftbYH deploy@gdefazan
